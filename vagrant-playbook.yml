@@ -1,0 +1,104 @@
+---
+- name: install minikube
+  hosts: all
+  become: yes
+  tasks:
+    - name: "setup kubectl responsitory"
+      yum_repository:
+        name: epel
+        description: kubectl repository
+        file: external_repos
+        baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+        gpgcheck: no
+    - name: "Installing Docker Prerequisite packages"
+      yum:
+        name:
+          - kubectl
+          - git
+          - yum-utils
+          - device-mapper-persistent-data
+          - lvm2
+          - python-setuptools
+          - python-devel
+        state: latest
+    - name: insatll pip
+      easy_install:
+        name: pip
+        state: latest
+    - name: install openshift
+      shell: |
+        sudo pip install -U setuptools
+        sudo pip install --ignore-installed openshift
+    - name: "Configuring docker-ce repo"
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+        mode: 0644
+    - name: " Installing Docker latest version"
+      yum:
+        name: docker-ce
+        state: present
+    - name: " Starting and Enabling Docker service"
+      service:
+        name: docker
+        state: started
+        enabled: yes
+    - name: install minikube
+      get_url:
+        url: https://storage.googleapis.com/minikube/releases/v0.34.1/minikube-linux-amd64
+        dest: /usr/local/bin/minikube
+        mode: 777
+    - name: setup cluster
+      shell: |
+        /usr/local/bin/minikube start --vm-driver none
+    - name: get cluster info
+      shell: kubectl cluster-info
+- name: Copy kube config for vagrant user
+  hosts: minikube
+  remote_user: vagrant
+  tasks:
+    - name: Create a directory
+      file:
+        path: /home/vagrant/.kube
+        state: directory
+        group: vagrant
+        owner: vagrant
+        mode: 755
+
+    - name: Copy kube config for vagrant user
+      copy:
+        remote_src: yes
+        src: /etc/kubernetes/admin.conf
+        dest: /home/vagrant/.kube/config
+- name: Fetch config
+  hosts: minikube
+  become: true
+  tasks:
+    - name: Retrieve kubectl config
+      fetch:
+        dest: ./kubeconfig
+        flat: yes
+        src: /root/.kube/config
+
+    - name: git clone rook
+      git:
+        repo: https://github.com/rook/rook
+        dest: /root/rook
+
+    - name: install operator
+      k8s:
+        state: present
+        src: /root/rook/cluster/examples/kubernetes/ceph/operator.yaml
+
+    - pause:
+        seconds: 10
+
+    - name: install ceph cluster
+      k8s:
+        state: present
+        src: /root/rook/cluster/examples/kubernetes/ceph/cluster.yaml
+
+    - name: install tool-box
+      k8s:
+        state: present
+        src: /root/rook/cluster/examples/kubernetes/ceph/toolbox.yaml
