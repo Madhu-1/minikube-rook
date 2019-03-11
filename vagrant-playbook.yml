@@ -1,7 +1,8 @@
 ---
 - name: install minikube
-  hosts: all
+  hosts: minikube
   become: yes
+  gather_facts: True
   tasks:
     - name: "setup kubectl responsitory"
       yum_repository:
@@ -45,12 +46,12 @@
         enabled: yes
     - name: install minikube
       get_url:
-        url: https://storage.googleapis.com/minikube/releases/v0.34.1/minikube-linux-amd64
+        url: https://storage.googleapis.com/minikube/releases/v0.35.0/minikube-linux-amd64
         dest: /usr/local/bin/minikube
         mode: 777
     - name: setup cluster
-      shell: |
-        /usr/local/bin/minikube start --vm-driver none
+      #if needed add kube version flag to minikube --kubernetes-version=v1.12.0
+      shell: "/usr/local/bin/minikube start --feature-gates=BlockVolume=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true --vm-driver=none"
     - name: get cluster info
       shell: kubectl cluster-info
 - name: Copy kube config for vagrant user
@@ -78,7 +79,7 @@
       fetch:
         dest: ./kubeconfig
         flat: yes
-        src: /root/.kube/config
+        src: /home/vagrant/.kube/config
 
     - name: git clone rook
       git:
