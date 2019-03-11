@@ -11,7 +11,7 @@ $pip install -r requirement.txt
 ## bring up the k8s
 
 ```console
-$vagrant up
+$sudo ./deploy.sh
 ```
 
 ## Note:- its assumed that you have all the packages installed like (vagrant,vagrant-libvirt etc)
