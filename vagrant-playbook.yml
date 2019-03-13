@@ -21,6 +21,7 @@
           - lvm2
           - python-setuptools
           - python-devel
+          - socat
         state: latest
     - name: insatll pip
       easy_install:
