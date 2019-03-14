@@ -38,21 +38,23 @@
         mode: 0644
     - name: " Installing Docker latest version"
       yum:
-        name: docker-ce
+        name: docker-ce-18.06.1.ce-3.el7
         state: present
     - name: " Starting and Enabling Docker service"
       service:
         name: docker
         state: started
         enabled: yes
+    - name: edit iptables
+      shell: echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables
     - name: install minikube
       get_url:
-        url: https://storage.googleapis.com/minikube/releases/v0.35.0/minikube-linux-amd64
+        url: https://storage.googleapis.com/minikube/releases/v0.32.0/minikube-linux-amd64
         dest: /usr/local/bin/minikube
         mode: 777
     - name: setup cluster
       #if needed add kube version flag to minikube --kubernetes-version=v1.12.0
-      shell: "/usr/local/bin/minikube start --feature-gates=BlockVolume=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true --vm-driver=none"
+      shell: "/usr/local/bin/minikube start --feature-gates=VolumeSnapshotDataSource=true --vm-driver=none"
     - name: get cluster info
       shell: kubectl cluster-info
 - name: Copy kube config for vagrant user
