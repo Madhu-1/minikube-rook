@@ -87,6 +87,11 @@
         repo: https://github.com/rook/rook
         dest: /root/rook
 
+    - name: install ceph common
+      k8s:
+        state: present
+        src: /root/rook/cluster/examples/kubernetes/ceph/common.yaml
+
     - name: install operator
       k8s:
         state: present
